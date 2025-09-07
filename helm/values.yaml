@@ -12,6 +12,14 @@ spring:
   profiles:
     active: "default"
 
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  hostname: "api.local"
+
 resources:
   requests:
     memory: "512Mi"
