@@ -54,7 +54,7 @@ class SecurityConfig {
                 .httpBasic(Customizer.withDefaults())
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
-                                adminContextPath + "/instances",
+                                adminContextPath + "/instances/**",
                                 adminContextPath + "/actuator/**"
                         )
                 );
