@@ -26,10 +26,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Show Current User and Groups
-        run: |
-          id
-          groups
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+          settings-path: ${{ github.workspace }}
 
       - name: Package with Maven
         run: mvn clean package -DskipTests
@@ -50,28 +53,9 @@ jobs:
 
       - name: Build Docker Image
         run: |
+          export DOCKER_BUILDKIT=1
           docker build -t ${{ steps.image_name.outputs.name }}:${{ steps.get_tag.outputs.tag }} .
           echo "Docker image built: ${{ steps.image_name.outputs.name }}:${{ steps.get_tag.outputs.tag }}"
-
-      - name: Verify microk8s availability and version
-        run: |
-          echo "PATH is $PATH"
-          microk8s status --wait-ready
-          microk8s version
-
-      - name: Debug PATH and microk8s path
-        run: |
-          echo $PATH
-          which microk8s
-          ls -l /snap/bin/microk8s
-          ls -l /usr/bin/snap
-          snap list
-
-      - name: Verify Docker Image Exists Before Import
-        run: |
-          echo "Checking if Docker image exists..."
-          docker image ls | grep ${{ steps.image_name.outputs.name }} | grep ${{ steps.get_tag.outputs.tag }}
-          echo "✅ Docker image is present"
 
       - name: Import Image into MicroK8s
         run: |
@@ -79,13 +63,7 @@ jobs:
           echo "${{ steps.image_name.outputs.name }}:${{ steps.get_tag.outputs.tag }}"
           set -x
           docker save ${{ steps.image_name.outputs.name }}:${{ steps.get_tag.outputs.tag }} | sudo /snap/bin/microk8s ctr image import -
-          echo "✅ Image import completed"
-
-      - name: Debug MicroK8s Helm Access
-        run: |
-          set -x
-          sudo /snap/bin/microk8s status --wait-ready --timeout 30
-          sudo /snap/bin/microk8s helm version || echo "helm version failed"
+          echo "Image import completed"
 
       - name: Run Helm Upgrade
         run: |
